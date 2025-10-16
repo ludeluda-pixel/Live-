@@ -1,0 +1,6 @@
+kivy
+pillow
+gTTS
+moviepy
+pydub
+requests
