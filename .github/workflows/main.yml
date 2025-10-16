@@ -1,0 +1,55 @@
+name: Build TikTok AI Mobile Lite APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git zip unzip wget curl tar build-essential python3-pip python3-dev ffmpeg libsndfile1
+
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+
+    - name: Install Python deps
+      run: |
+        pip install --upgrade pip
+        pip install Cython==0.29.33 buildozer
+        pip install kivy pillow gTTS moviepy pydub requests
+
+    - name: Run build_apk.py (generate spec)
+      run: python3 build_apk.py
+
+    - name: Build APK with Buildozer
+      run: |
+        cd tiktok_ai_mobile_pro
+        buildozer android debug --verbose
+
+    - name: Rename APK
+      run: |
+        cd tiktok_ai_mobile_pro/bin
+        apk_file=$(ls *.apk 2>/dev/null | head -n 1)
+        if [ -f "$apk_file" ]; then
+          mv "$apk_file" TikTokAI_Lite-debug.apk
+        else
+          echo "No APK found"
+          exit 1
+        fi
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: TikTokAI_Lite-APK
+        path: tiktok_ai_mobile_pro/bin/TikTokAI_Lite-debug.apk
